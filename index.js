@@ -1,44 +1,51 @@
-const aws = require('aws-sdk');
+const aws = require("aws-sdk");
 var ses = new aws.SES({ region: "eu-central-1" });
-var nodemailer = require('nodemailer');
+var mimemessage = require("mimemessage");
 
-function sendMail (subject, body, file, email) {
-
-        var mailOptions = {
-                from: 'thomas.jansky@csd-stuttgart.de',
-                subject: subject,
-                html: body,
-                to: email,
-                cc: ['thomas.jansky@csd-stuttgart.de'],
-                // bcc: Any BCC address you want here in an array,
-                attachments: [
-                    {
-                        filename: file.name,
-                        content: file.data
-                    }
-                ]
-            };
-
-            console.log('Creating SES transporter');
-            // create Nodemailer SES transporter
-            var transporter = nodemailer.createTransport({
-                SES: ses
-            });
-
-            // send email
-            transporter.sendMail(mailOptions, function (err, info) {
-                if (err) {
-                    console.log(err);
-                    console.log('Error sending email');
-                } else {
-                    console.log('Email sent successfully');
-                }
-            });
-};
+function sendMail(subject, body, file, email) {
+  var mailContent = mimemessage.factory({
+    contentType: "multipart/mixed",
+    body: [],
+  });
+  mailContent.header(
+    "From",
+    "Stuttgart PRIDE <thomas.jansky@csd-stuttgart.de>"
+  );
+  mailContent.header("To", email);
+  mailContent.header("Cc", "thomas.jansky@csd-stuttgart.de");
+  mailContent.header("Subject", subject);
+  var alternateEntity = mimemessage.factory({
+    contentType: "multipart/alternate",
+    body: [],
+  });
+  var htmlEntity = mimemessage.factory({
+    contentType: "text/html;charset=utf-8",
+    body: body,
+  });
+  alternateEntity.body.push(htmlEntity);
+  mailContent.body.push(alternateEntity);
+  if (!!file) {
+    var attachmentEntity = mimemessage.factory({
+      contentType: `image/png; name="${file.name}"`,
+      contentTransferEncoding: "base64",
+      body: file.data,
+    });
+    attachmentEntity.header(
+      "Content-Disposition",
+      `attachment ;filename="${file.name}"`
+    );
+    attachmentEntity.header("Content-Type", `image/png; filename="${file.name}"`);
+    attachmentEntity.header("Content-Transfer-Encoding", `base64`);
+    attachmentEntity.header("Content-ID", "12345");
+    attachmentEntity.header("Content-Location", file.name);
+    mailContent.body.push(attachmentEntity);
+  }
+  return mailContent;
+}
 
 exports.handler = async function (event) {
   // console.log(event.mappedData.mail);
-  const data = {...event.mappedData, ...event.bumaData};
+  const data = { ...event.mappedData, ...event.bumaData };
   // console.log(data);
   mapData(data);
   // console.log(data);
@@ -1126,59 +1133,59 @@ Condensed';font-weight:300;text-transform:uppercase;font-size:24px;line-height:3
           <table>
             <tr>
               <td>Organisation/Firma</td>
-              <td>${data.company}</td>
+              <td>${data.company ?? ''}</td>
             </tr>
             <tr>
               <td>Ansprechperson</td>
-              <td>${data.name}</td>
+              <td>${data.name ?? ''}</td>
             </tr>
             <tr>
               <td>Stra&szlig;e</td>
-              <td>${data.street}</td>
+              <td>${data.street ?? ''}</td>
             </tr>
             <tr>
               <td>PLZ</td>
-              <td>${data.postcode}</td>
+              <td>${data.postcode ?? ''}</td>
             </tr>
             <tr>
               <td>Ort</td>
-              <td>${data.city}</td>
+              <td>${data.city ?? ''}</td>
             </tr>
             <tr>
               <td>E-Mail</td>
-              <td>${data.mail}</td>
+              <td>${data.mail ?? ''}</td>
             </tr>
             <tr>
               <td>Telefon</td>
-              <td>${data.phone}</td>
+              <td>${data.phone ?? ''}</td>
             </tr>
             <tr>
               <td>RE-Adresse Name</td>
-              <td>${data.nameRE}</td>
+              <td>${data.nameRE ?? ''}</td>
             </tr>
             <tr>
               <td>RE-Adresse Stra&szlig;e</td>
-              <td>${data.streetRE}</td>
+              <td>${data.streetRE ?? ''}</td>
             </tr>
             <tr>
               <td>RE-Adresse PLZ</td>
-              <td>${data.postcodeRE}</td>
+              <td>${data.postcodeRE ?? ''}</td>
             </tr>
             <tr>
               <td>RE-Adresse Ort</td>
-              <td>${data.cityRE}</td>
+              <td>${data.cityRE ?? ''}</td>
             </tr>
             <tr>
               <td>Art des Standes</td>
-              <td>${data.kindOf}</td>
+              <td>${data.kindOf ?? ''}</td>
             </tr>
             <tr>
               <td>Art der Organisation</td>
-              <td>${data.kindOfOrg}</td>
+              <td>${data.kindOfOrg ?? ''}</td>
             </tr>
             <tr>
               <td>Getr&auml;nkeangebot</td>
-              <td>${data.drinks}</td>
+              <td>${data.drinks ?? ''}</td>
             </tr>
             <tr>
               <td>L&auml;nge der Mietfl&auml;che</td>
@@ -1197,23 +1204,23 @@ Condensed';font-weight:300;text-transform:uppercase;font-size:24px;line-height:3
             </tr>
             <tr>
               <td>Stromanschluss</td>
-              <td>${data.electricity}</td>
+              <td>${data.electricity ?? ''}</td>
             </tr>
             <tr>
               <td>Wasseranschluss</td>
-              <td>${data.water}</td>
+              <td>${data.water ?? ''}</td>
             </tr>
             <tr>
               <td>Eigener Gasanschluss</td>
-              <td>${data.gas}</td>
+              <td>${data.gas ?? ''}</td>
             </tr>
             <tr>
               <td>Eigener K&uuml;hlwagen (PKW-Anh&auml;nger)</td>
-              <td>${data.refrigeratedTruck}</td>
+              <td>${data.refrigeratedTruck ?? ''}</td>
             </tr>
             <tr>
               <td>Kommentar</td>
-              <td>${data.comment}</td>
+              <td>${data.comment ?? ''}</td>
             </tr>
           </table>
           Viele Gr&uuml;&szlig;e<br>
@@ -1272,52 +1279,67 @@ Arial;line-height:0px;background-color:#1b181c;width:600px;" valign="bottom"></t
 </body>
 </html>`;
   const file = {
-    name: event.file.name,
-    data: event.file.data
+    name: event.file?.name,
+    data: event.file?.data,
   };
-  sendMail(
+  const prepedMail = sendMail(
     "Vielen dank für deine Anfrage zur CSD-Hocketse",
     text,
     file,
     event.mappedData.mail
   );
-    return {statusCode: 200};
+  const response = await ses
+    .sendRawEmail({
+      RawMessage: { Data: prepedMail.toString() },
+    })
+    .promise();
+
+  console.log("###", response);
+  return { statusCode: 200 };
 };
 
 function mapData(data) {
-    const KIND_OF_MAP = {
-      info: 'Infostand',
-      gastro: 'Gastronomie',
-      promo: 'Promotion'
-    };
-          
-    const KIND_OF_ORG_MAP = {
-          party: 'Partei',
-          society: 'Verein',
-          company: 'Unternehmen'
-      };
-        
-    const TRUE_FALSE_MAP = {"true":'Ja', "false": 'Nein', "undefined": 'Nein'};
-    const ELECRICITY_MAP = {"false": 'Nein', 
-        "undefined": 'Nein', 
-        "230v": '230 V',
-        "400V/16A": 'CEE 400 V / 16 A', 
-        "400V/32A": 'CEE 400 V / 32 A', 
-        "2x230v": '2x 230 V',
-        "2x400V/16A": '2x CEE 400 V / 16 A', 
-        "2x400V/32A": '2x CEE 400 V / 32 A'};
-    const DAYS_MAP = {
-          sunday: 'Sonntag, 30.07.2023',
-          both: 'Samstag und Sonntag, 29.07. und 30.07.2023'
-        };
-    const DRINK_MAP = {beer: 'Bier', wine: 'Wein/Sekt', energy: 'Energey', softdrinks: 'Softdrinks', cocktail: 'Cocktails / Longdrinks'};
-    
-    data.kindOf = KIND_OF_MAP[data.kindOf];
-    data.kindOfOrg = KIND_OF_ORG_MAP[data.kindOfOrg];
-    data.gas = TRUE_FALSE_MAP[data.gas];
-    data.water = TRUE_FALSE_MAP[data.water];
-    data.refrigeratedTruck = TRUE_FALSE_MAP[data.refrigeratedTruck];
-    data.electricity = ELECRICITY_MAP[data.electricity];
-    data.days = DAYS_MAP[data.days];
-    data?.drinks?.map(drink => DRINK_MAP[drink]);
+  const KIND_OF_MAP = {
+    info: "Infostand",
+    gastro: "Gastronomie",
+    promo: "Promotion",
+  };
+
+  const KIND_OF_ORG_MAP = {
+    party: "Partei",
+    society: "Verein",
+    company: "Unternehmen",
+  };
+
+  const TRUE_FALSE_MAP = { true: "Ja", false: "Nein", undefined: "Nein" };
+  const ELECRICITY_MAP = {
+    false: "Nein",
+    undefined: "Nein",
+    "230v": "230 V",
+    "400V/16A": "CEE 400 V / 16 A",
+    "400V/32A": "CEE 400 V / 32 A",
+    "2x230v": "2x 230 V",
+    "2x400V/16A": "2x CEE 400 V / 16 A",
+    "2x400V/32A": "2x CEE 400 V / 32 A",
+  };
+  const DAYS_MAP = {
+    sunday: "Sonntag, 30.07.2023",
+    both: "Samstag und Sonntag, 29.07. und 30.07.2023",
+  };
+  const DRINK_MAP = {
+    beer: "Bier",
+    wine: "Wein/Sekt",
+    energy: "Energey",
+    softdrinks: "Softdrinks",
+    cocktail: "Cocktails / Longdrinks",
+  };
+
+  data.kindOf = KIND_OF_MAP[data.kindOf];
+  data.kindOfOrg = KIND_OF_ORG_MAP[data.kindOfOrg];
+  data.gas = TRUE_FALSE_MAP[data.gas];
+  data.water = TRUE_FALSE_MAP[data.water];
+  data.refrigeratedTruck = TRUE_FALSE_MAP[data.refrigeratedTruck];
+  data.electricity = ELECRICITY_MAP[data.electricity];
+  data.days = DAYS_MAP[data.days];
+  data?.drinks?.map((drink) => DRINK_MAP[drink]);
 }
